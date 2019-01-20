@@ -1,0 +1,15 @@
+net: "features/caffe/model/train_test_lstm.prototxt"
+test_iter: 1
+test_interval: 1000000000
+base_lr: 0.010000
+lr_policy: "step"
+gamma: 0.1
+stepsize: 25000
+momentum: 0.900000
+weight_decay: 0.005000
+snapshot: 1000
+snapshot_prefix: "input_output/rats/features/caffe/snapshots"
+display: 10
+max_iter: 196150
+solver_mode: GPU
+device_id: 2
