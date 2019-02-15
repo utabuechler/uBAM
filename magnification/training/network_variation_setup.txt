@@ -1,0 +1,8 @@
+============== Grid Search 1 =========
+#Training
+lr:             [5e-4]
+alpha:          [1]
+beta:           [0.001]
+gamma:          [0.001]
+delta:          [10]
+n_epochs:       [100]

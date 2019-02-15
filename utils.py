@@ -31,9 +31,9 @@ def run_on_system(command):
 def load_table(file,index=None,asDict=True):
     if isinstance(file,str):
         if os.path.splitext(file)[1]=='.xlsx':
-            df = pd.read_excel(io=file,encoding='utf-8')
+            df = pd.read_excel(io=file,encoding='utf-16')
         elif os.path.splitext(file)[1]=='.csv':
-            df = pd.read_csv(file,encoding='utf-8')
+            df = pd.read_csv(file,encoding='utf-16')
     
         df.columns = [x.lower() for x in df.columns]#to be invariant to column headers with capital letter
         
@@ -152,7 +152,7 @@ def load_features(feature_type,features_path,videos,progress_bar=True):
     
     if 'fc6' in feature_type or 'fc7' in feature_type:
         fc6,fc7,frames,coords,vids= [],[],[],[],[]
-        for i,vid in (enumerate(tqdm(videos,desc='Extract Features')) if progress_bar else enumerate(videos)):
+        for i,vid in (enumerate(tqdm(videos,desc='Extract frames Features')) if progress_bar else enumerate(videos)):
             feat_vid_file = features_path+'fc6_fc7_feat/'+vid+'.npz'
             #print(feat_vid_file)
             if not os.path.exists(feat_vid_file):
@@ -178,7 +178,7 @@ def load_features(feature_type,features_path,videos,progress_bar=True):
         
     elif 'lstm' in feature_type:
         lstm,frames,coords,vids= [],[],[],[]
-        for i,vid in (enumerate(tqdm(videos,desc='Extract Features')) if progress_bar else enumerate(videos)):
+        for i,vid in (enumerate(tqdm(videos,desc='Extract sequence Features')) if progress_bar else enumerate(videos)):
             vid = videos[i]
             feat_vid_file = features_path+'lstm_feat/'+vid+'.npz'
             if not os.path.exists(feat_vid_file):
@@ -201,9 +201,11 @@ def load_features(feature_type,features_path,videos,progress_bar=True):
     coords = np.array(coords)
     return feat,frames,coords,vids
 
-def draw_box(image,l=2,color=[255,0,0]):
-    c = [image.shape[0]/2,image.shape[1]/2]
-    size = image.shape[0]/2-2
+
+def draw_box(image,coord,l=2,color=[255,0,0]):
+    c = np.array([(coord[1]+coord[3])/2,
+                  (coord[0]+coord[2])/2]).astype(int)
+    size = (coord[3]-coord[1])/2
     color   = np.array(color).reshape([1,1,3])
     color_r = np.repeat(np.repeat(color,size*2,axis=0),4,axis=1)
     color_c = np.repeat(np.repeat(color,size*2,axis=1),4,axis=0)
@@ -225,3 +227,23 @@ def draw_box(image,l=2,color=[255,0,0]):
     except:
         pass
     return image
+
+
+def draw_border(image,l=5,color=[255,0,0]):
+    color = np.array(color)
+    if not np.any(color>1):
+        color = (255*color).astype('uint8')
+    
+    for c in range(3):
+        image[:,:l,c] = color[c]
+        image[:,-l:,c]= color[c]
+        image[:l,:,c] = color[c]
+        image[-l:,:,c]= color[c]
+    
+    return image
+
+
+def fig2data(fig):
+    fig.tight_layout()
+    fig.canvas.draw()
+    return np.array(fig.canvas.renderer._renderer)
