@@ -1,0 +1,16 @@
+**/*.caffemodel
+**/*.solverstate
+**/*.pyc
+**/*~
+**/*.pth.tar
+**/logs/**
+**/*.pkl
+**/*.pth.tar
+**/checkpoints
+/myreadme.md
+**/*.jpg
+**/old
+**/*.npz
+input_output
+config_pytorch.py
+config_pytorch_human.py

@@ -164,7 +164,7 @@ class CaffeNet(nn.Module):
             #nn.init.xavier_normal(model.weight.data)
             #nn.init.constant(model.bias.data, 0.1)
     
-    def load_weights(self,pretrained_dict):
+    def load_weights(self,pretrained_dict,show=True):
         #model.load_state_dict(torch.load('mytraining.pt'))
         model_dict = self.state_dict()
 
@@ -175,9 +175,10 @@ class CaffeNet(nn.Module):
         # 3. load the new state dict
         self.load_state_dict(model_dict)
         
-        print 'Updated the following weights:'
-        for key,value in pretrained_dict.iteritems() :
-            print key
+        if show:
+            print('Updated the following weights:')
+            for key,value in pretrained_dict.iteritems() :
+                print(key)
     
     #def loadCaffeNetWeights(self,pretrained_dict):
         
