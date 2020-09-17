@@ -14,23 +14,11 @@ import os, sys, numpy as np, argparse
 from time import time
 from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
-
-#from skimage.transform import resize
-from scipy.io import loadmat
-from scipy.misc import imread
-from scipy.spatial.distance import euclidean, cdist
-from PIL import Image
-import imageio
 import matplotlib.gridspec as gridspec
 
-from sklearn.preprocessing import normalize
-try:
-    from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-except:
-    from sklearn.lda import LDA
-
-from sklearn.svm import LinearSVC
-import peakutils
+from scipy.io import loadmat
+from skimage.io import imread, imsave
+from skimage.transform import resize
 
 from utils import load_table,load_features, draw_border, fig2data, load_image
 sys.path.append('./magnification/')
@@ -40,8 +28,6 @@ from Generator import Generator, find_differences
 import config_pytorch_human as cfg
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-p", "--pages",type=int,default=10,
-                    help="Number of plots to save")
 parser.add_argument("-q", "--queries",type=int,default=5,
                     help="Number of queries per plot")
 parser.add_argument("-g", "--gpu",type=int,default=0,
@@ -64,44 +50,66 @@ det_time  = np.array(detections['time'])   # Used for classifier and plots
 det_frames= np.array(detections['frames'])
 det_videos= np.array(detections['videos'])
 uni_videos= np.unique(detections['videos'].values)
+uni_videos= uni_videos[::5]
 
 print('Load features...')
 pos_features,pos_frames,pos_coords,pos_videos = load_features('fc6', cfg.features_path,uni_videos.tolist())
+
+
+sel = [v in uni_videos for v in pos_videos]
+
+sel = np.logical_and(pos_frames < 50, sel)
+pos_features, pos_frames = pos_features[sel], pos_frames[sel]
+pos_coords, pos_videos = pos_coords[sel], pos_videos[sel]
+
+images = [load_image(cfg.crops_path, v, f) 
+            for v, f in zip(tqdm(pos_videos, desc='load videos'), pos_frames)]
+images = (np.stack([resize(im, (128, 128)) for im in images]) * 255).astype('uint8')
 
 ############################################
 # 2. Evaluate disentanglement of posture and appearance
 ############################################
 dt = datetime.now()
 dt = '{}-{}-{}-{}-{}/'.format(dt.year, dt.month, dt.day, dt.hour, dt.minute)
-results_folder = cfg.results_path+'/magnification/evaluation/'+dt
+results_folder = cfg.results_path+'/magnification/evaluate_interpolation/'+dt
 if not os.path.exists(results_folder): os.makedirs(results_folder)
 
 Q = args.queries
-for P in trange(args.pages,desc="Save plots"):
-    queries = np.random.permutation(len(pos_frames))[:Q*2]
-    images  = [load_image(cfg.crops_path,pos_videos[q],pos_frames[q]) for q in queries]
-    z = [generator.encode(im,pos_features[q]) for im, q in zip(images,queries)]
-    ############################################
-    # 3. Plot
-    ############################################
-    _=plt.figure(figsize=(11,11))
-    R, C = Q+1, Q+1
-    gs = gridspec.GridSpec(R,C)
-    first_row = [plt.subplot(gs[0,i+1]) for i in range(C-1)]
-    first_column = [plt.subplot(gs[i+1,0]) for i in range(R-1)]
-    middle = [[plt.subplot(gs[i+1,j+1]) for j in range(R-1)]  for i in range(R-1)]
-    
-    first_row[Q//2].set_title('Query Posture',color='blue',fontsize=30)
-    for i, im in enumerate(images[Q:]): _=first_row[i].imshow(im); _=first_row[i].axis('Off')
-    for i, im in enumerate(images[:Q]): _=first_column[i].imshow(im); _=first_column[i].axis('Off')
-    
-    for i in range(Q):
-        for j in range(Q,2*Q):
-            im = generator.decode(z[i][0],z[j][1])
-            _=middle[i][j-Q].imshow(im); _=middle[i][j-Q].axis('Off')
-    
-    first_column[Q//2].set_title('Query Appearance',color='black',rotation='vertical',x=-0.3,y=0.8,fontsize=30)
-    plt.savefig(results_folder+'page_%d.png'%(P))
-    plt.savefig(results_folder+'page_%d.eps'%(P))
+#for P in trange(args.pages,desc="Save plots"):
+#    queries = np.random.permutation(len(pos_frames))[:Q*2]
+#queries = np.linspace(0, len(pos_frames), Q).astype(int)
+#references = np.linspace(len(pos_frames)//2, len(pos_frames)-1, Q).astype(int)
+queries = [np.where(pos_videos==v)[0][0] for v in uni_videos]
+queries = queries[::len(queries)//Q]
+z_s = [generator.encode(images[q],pos_features[q]) for q in queries]
+z_e = [generator.encode(images[q+5],pos_features[q+5]) for q in queries]
+
+############################################
+# 3. Plot
+############################################
+_=plt.figure(figsize=(8,Q*2))
+R, C = Q, 4
+gs = gridspec.GridSpec(R,C)
+grid = [[plt.subplot(gs[i,j]) for j in range(C)] for i in range(R)]
+
+#    first_row[Q//2].set_title('Query Posture',color='blue',fontsize=30)
+for i in range(R):
+    app = z_s[i][0]
+    pos = (z_s[i][1] + z_e[i][1]) / 2
+    im = generator.decode(app, pos)
+#    im = (im * 255).astype('uint8')
+    _=grid[i][0].imshow(images[queries[i]])
+    _=grid[i][1].imshow(images[queries[i]+3])
+    _=grid[i][2].imshow(im)
+    _=grid[i][3].imshow(images[queries[i]+5])
+    for j in range(C): _=grid[i][j].axis('Off')
+
+grid[0][0].set_title('T=0')#,color='black',rotation='horizontal',x=-0.3,y=0.8,fontsize=30)
+grid[0][1].set_title('T=3')
+grid[0][2].set_title('Interpolation')
+grid[0][3].set_title('T=5')
+plt.tight_layout()
+plt.savefig(results_folder+'vae_interpolation.png')
+plt.savefig(results_folder+'vae_interpolation.eps')
 
 

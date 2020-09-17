@@ -151,7 +151,7 @@ class dataset(torch.utils.data.Dataset):
         ### Load original image
         image_orig          = load_image(self.data_path,video,frame)
 
-        rand_inter          = np.random.randint(2,min(8,F),1)[0]
+        rand_inter          = np.random.randint(2,min(4,F),1)[0]
         if (np.random.rand()<0.5 and iframe>=rand_inter) or iframe>F-rand_inter-1:
             rand_inter *= -1
         # if int(idx%200) > 100:

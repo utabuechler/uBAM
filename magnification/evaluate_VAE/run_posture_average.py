@@ -36,8 +36,8 @@ from utils import load_table,load_features, draw_border
 sys.path.append('./magnification/')
 from Generator import Generator, find_differences
 
-import config_pytorch as cfg
-#import config_pytorch_human as cfg
+#import config_pytorch as cfg
+import config_pytorch_human as cfg
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--pages",type=int,default=10,
@@ -49,6 +49,8 @@ parser.add_argument("-n", "--nn",type=int,default=100,
 parser.add_argument("-g", "--gpu",type=int,default=0,
                     help="GPU device to use for image generation")
 args = parser.parse_args()
+
+os.environ["CUDA_VISIBLE_DEVICES"]= str(args.gpu)
 
 ############################################
 # 0. Functions
@@ -64,7 +66,7 @@ def load_image(v,f,c=None):
 ############################################
 # 0. Prepare magnifier object
 ############################################
-generator = Generator(z_dim=cfg.encode_dim,path_model=cfg.vae_weights_path)
+generator = Generator(z_dim=cfg.vae_encode_dim,path_model=cfg.vae_weights_path)
 
 ############################################
 # 1. Load sequences and features
@@ -84,6 +86,7 @@ dt = datetime.now()
 dt = '{}-{}-{}-{}-{}/'.format(dt.year, dt.month, dt.day, dt.hour, dt.minute)
 results_folder = cfg.results_path+'/magnification/average/'+dt
 if not os.path.exists(results_folder): os.makedirs(results_folder)
+print(results_folder)
 
 Q = args.queries
 R, C = 3, Q
@@ -120,9 +123,9 @@ for P in trange(args.pages,desc='Pages'):
         _=row2[i].imshow(rgb_avg); _=row2[i].axis('Off')
         _=row3[i].imshow(vae_avg); _=row3[i].axis('Off')
     
-    _=row1[Q/2].set_title('Queries',color='black')
-    _=row2[Q/2].set_title('Pixel Average',color='blue')
-    _=row3[Q/2].set_title('Generated',color='red')
+    _=row1[Q//2].set_title('Queries',color='black')
+    _=row2[Q//2].set_title('Pixel Average',color='blue')
+    _=row3[Q//2].set_title('Generated',color='red')
     plt.savefig(results_folder+'page_%d.png'%(P))
     plt.savefig(results_folder+'page_%d.eps'%(P))
     #plt.show()

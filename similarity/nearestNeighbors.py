@@ -21,7 +21,7 @@ from utils import load_table, load_features
 import matplotlib.pyplot as plt
 from PIL import Image
 
-import config as cfg
+import config_pytorch as cfg
 
 try:
     import faiss
@@ -64,14 +64,14 @@ def compute_NN(feat,k,idx):
         #index.nprobe = nprobe
         
     else:
-        D = np.zeros((len(idx),k),np.float32)
-        I = np.zeros((len(idx),k),np.int)
+        D = np.zeros((len(idx),100*k),np.float32)
+        I = np.zeros((len(idx),100*k),np.int)
         dist = cdist(feat[idx,:],feat,metric='cosine')
         for j,d in enumerate(dist):
             sort_idx = np.argsort(d)
             d = d[sort_idx]
-            I[j,:] = sort_idx[:k]
-            D[j,:] = d[:k]
+            I[j,:] = sort_idx[:100*k]
+            D[j,:] = d[:100*k]
         
     return D,I
     

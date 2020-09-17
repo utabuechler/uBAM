@@ -109,7 +109,7 @@ def find_differences_cc(healthy,impaired,enhanced,Th=0.25,scale=20):
     impaired, enhanced = resize(impaired,scale1), resize(enhanced,scale1)
     impaired_gray=cv2.cvtColor(impaired,cv2.COLOR_RGB2GRAY)
     enhanced_gray=cv2.cvtColor(enhanced,cv2.COLOR_RGB2GRAY)
-    flow = optical_flow.calc(enhanced_gray, impaired_gray, None) # compute flow
+    flow = optical_flow.calc(impaired_gray, enhanced_gray, None) # compute flow
     #print('Flow in %.2f'%(time()-t))
     mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
     flow = flow/np.repeat(mag[:,:,np.newaxis],2,axis=2)
@@ -123,26 +123,27 @@ def find_differences_cc(healthy,impaired,enhanced,Th=0.25,scale=20):
     t = time()
     mask_labels = measure.label(mask, background=0)
     labels = np.unique(mask_labels)
-    flow_sparse = []
+    flow_sparse, areas = [], []
     for l in range(1,labels.max()+1):
         m = np.where(mask_labels==l)
         #print(len(m[0]))
-        if len(m[0])<100: continue
+        if len(m[0])<150: continue
         
         m = [(m[0]*scale1).astype(int), (m[1]*scale1).astype(int)]
         fx, fy = flow[m[0],m[1],0].max(), flow[m[0],m[1],1].max()
         x, y = int(np.median(m[0])/scale1), int(np.median(m[1])/scale1)
         flow_sparse.append([x,y,fx,fy])
+        areas.append(len(m[0]))
     
     #print('CC in %.2f'%(time()-t))
     #diff_image = mask_labels
     diff_image = resize(diff_image, 1/scale1)
     #print diff_image.dtype
     if len(flow_sparse)==0:
-        return diff_image,np.zeros([1,2]),0,0
+        return diff_image,np.zeros([1,2]),[0],[0],np.zeros(1)
     
     flow_sparse = np.array(flow_sparse)
-    return diff_image,flow_sparse[:,2:],flow_sparse[:,1].astype(int),flow_sparse[:,0].astype(int)
+    return diff_image,flow_sparse[:,2:],flow_sparse[:,1].astype(int),flow_sparse[:,0].astype(int), np.array(areas)
 
 
 def find_differences(healthy,impaired,enhanced,Th=0.25,scale=20):

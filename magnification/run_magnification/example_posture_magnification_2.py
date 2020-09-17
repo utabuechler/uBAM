@@ -32,17 +32,18 @@ from sklearn.svm import LinearSVC
 
 from utils import load_table, load_features, draw_border, fig2data, load_image
 sys.path.append('./magnification/')
-from Generator import Generator, find_differences, find_differences_cc
+from Generator2 import Generator, find_differences, find_differences_cc
 
 #import config_pytorch as cfg
-import config_pytorch_human as cfg
+#import config_pytorch_human as cfg
+import config_pytorch_rats_biagio as cfg
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--length",type=int,default=8,
                     help="Sequence length")
-parser.add_argument("-q", "--query",type=int,default=10,
+parser.add_argument("-q", "--query",type=int,default=5,
                     help="Frame query")
-parser.add_argument("-nn", "--nn",type=int,default=30,
+parser.add_argument("-nn", "--nn",type=int,default=10,
                     help="Nearest neighbor for posture average")
 parser.add_argument("-l", "--lambdas",type=float,default=2.5,
                     help="Extrapolation factor")
@@ -56,7 +57,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]= str(args.gpu)
 ############################################
 # 0. Prepare magnifier object
 ############################################
-generator = Generator(z_dim=cfg.encode_dim,path_model=cfg.vae_weights_path)
+generator = Generator(z_dim=cfg.vae_encode_dim,path_model=cfg.vae_weights_path)
 
 ############################################
 # 1. Load sequences and features
@@ -68,7 +69,8 @@ det_frames= np.array(detections['frames'])
 det_videos= np.array(detections['videos'])
 uni_videos= np.unique(detections['videos'].values)
 uni_videos = np.array([v for v in uni_videos if os.path.isdir(cfg.crops_path+v)])
-
+#uni_videos = uni_videos[[0,1,2,3,-10,-9,-8]]
+#uni_videos = uni_videos[::20]
 print('Load features...')
 pos_features,pos_frames,pos_coords,pos_videos = load_features('fc6', cfg.features_path,uni_videos.tolist())
 
@@ -99,9 +101,12 @@ feat = pos_features[selection_frames]
 # Look for NN in the healthy and impaired postures, 
 # then average over NN in the VAE space
 healthy_nn = cdist(feat,h_pos_feat,'cosine').argsort(1)[:,:args.nn]
-impaired_nn= cdist(feat,i_pos_feat,'cosine').argsort(1)[:,:args.nn]
+impaired_nn= cdist(feat,i_pos_feat,'cosine').argsort(1)[:,:1]#args.nn]
 healthy_seq = [[load_image(cfg.crops_path,h_pos_videos[nn],h_pos_frames[nn]) for nn in healthy_nn[f]] for f in range(F)]
 impaired_seq= [[load_image(cfg.crops_path,i_pos_videos[nn],i_pos_frames[nn]) for nn in impaired_nn[f]] for f in range(F)]
+
+appearances = [load_image(cfg.frames_path,i_pos_videos[f[0]],i_pos_frames[f[0]]) 
+                for f in impaired_nn]
 
 ############################################
 # 4. Plot
@@ -118,13 +123,14 @@ plt.tight_layout()
 gs = gridspec.GridSpec(R,C)
 subplot = [[plt.subplot(gs[i,j]) for j in range(C)] for i in range(R)]
 
-for f, fr in enumerate(frame):
+for f in range(len(impaired_seq)):
+    image_app = appearances[f]
     healthy_res, impaired_res, magnified_res = generator.extrapolate_multiple(
                     healthy_seq[f], h_pos_feat[healthy_nn[f]],
                     impaired_seq[f],i_pos_feat[impaired_nn[f]],
-                    [0.0,1.0,args.lambdas])
-    diff_image,flow_filtered,X,Y = find_differences_cc(healthy_res,impaired_res,
-                                                magnified_res,Th=0.05,scale=20)
+                    image_app, [0.0,1.0,args.lambdas])
+    diff_image,flow_filtered,X,Y,_ = find_differences_cc(
+                    healthy_res,impaired_res,magnified_res,Th=0.20,scale=20)
     healthy_res  = draw_border(healthy_res, l=2,color=[0,1.0,0])
     impaired_res = draw_border(impaired_res,l=2,color=[0,0,1.0])
     magnified_res= draw_border(magnified_res,l=2,color=[1.0,0,0])

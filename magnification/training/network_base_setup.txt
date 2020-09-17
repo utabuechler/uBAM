@@ -3,7 +3,7 @@ z_dim:              50
 feature_size:       4096
 
 #Training
-n_epochs:           50
+n_epochs:           200
 lr:                 0.001
 bs:                 20
 verbose_idx:        20
@@ -16,5 +16,5 @@ beta:               0.001
 gamma:              0.001
 delta:              10
 size:               60000
-savename:           'interpolation_whole_dataset'
+savename:           'interpolation'
 GPU:                1

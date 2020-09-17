@@ -10,8 +10,11 @@ from torchvision import transforms
 
 sys.path.append('./magnification/')
 import network as net
-sys.path.append('./magnification/training/')
-import auxiliaries as aux
+
+sys.path.append('./magnification/training2/')
+import vae_auxiliaries as aux
+from vae_dataloader import dataset
+from vae_losses import Loss
 
 import config_pytorch as cfg
 #import config_pytorch_human as cfg
@@ -79,24 +82,24 @@ def main(opt):
     imp.reload(net)
     VAE         = net.VAE_FC6(opt.Network).cuda()
     Vgg         = net.Vgg16().cuda()
-    print 'Network initialized'
+    print('Network initialized')
     
     ### Set Optimizer
-    loss_func   = aux.Loss(opt)
+    loss_func   = Loss(opt)
     optimizer   = torch.optim.Adam(filter(lambda p: p.requires_grad, VAE.parameters()), lr=opt.Training['lr'], weight_decay=opt.Training['weight_decay'])
     scheduler   = torch.optim.lr_scheduler.StepLR(optimizer, step_size=opt.Training['step_size'], gamma=opt.Training['gamma2'])
 
     """============================================"""
     ### Set Dataloader
-    train_dataset     = aux.dataset(opt)
+    train_dataset     = dataset(opt)
     train_data_loader = torch.utils.data.DataLoader(train_dataset, num_workers = opt.Training['kernels'],
                                                     batch_size = opt.Training['bs'], shuffle=True)
-    print 'DataLoader initialized'
+    print('DataLoader initialized')
     """============================================"""
     ### Set Logging Files ###
     dt = datetime.now()
     dt = '{}-{}-{}-{}-{}'.format(dt.year, dt.month, dt.day, dt.hour, dt.minute)
-    opt.Training['name'] = 'VAE-'+str(opt.iter_idx)+'_Date-'+dt
+    opt.Training['name'] = 'VAE_'+dt
     if opt.Training['savename']!="":
         opt.Training['name'] += '_'+opt.Training['savename']
 
@@ -131,7 +134,7 @@ def main(opt):
 
     ### Setting up CSV writers
     full_log  = aux.CSVlogger(save_path+"/log_per_epoch.csv", ["Epoch", "Time", "Training Loss", "Training Acc", "Learning Rate", "Loss_Recon", "Loss_KLD_APP", "Loss_KLD_Pos", "Loss_APP", "Loss_Inter"])
-    print 'Logger initialized'
+    print('Logger initialized')
 
     """============================================="""
     epoch_iterator = tqdm(range(opt.Training['n_epochs']),position=1)
@@ -187,62 +190,30 @@ if __name__ == '__main__':
     parser.add_argument("--gpu",type=int,default=0,
                         help="ID of the GPU device to use for training.")
     args = parser.parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"]= str(args.gpu)
     ### GET TRAINING SETUPs ###
     #Read network and training setup from text file.
     opt = argparse.Namespace()
-    opt.Paths = {}
-    ### DATA PATHS ###
-    opt.Paths['detections'] = cfg.detection_file
-    opt.Paths['img'] = cfg.crops_path
-    opt.Paths['fc6'] = cfg.features_path+'/fc6_fc7_feat/'
-    opt.Paths['save_path'] = cfg.vae_checkpoint_path
-    opt.Paths['network_base_setup_file']      = './magnification/training//network_base_setup.txt'
-    opt.Paths['network_variation_setup_file'] = './magnification/training/network_variation_setup.txt'
-    opt = aux.extract_setup_info(opt)[0]
-    opt.Network['z_dim'] = cfg.encode_dim
-    opt.Training['savename'] = cfg.model_name
-    os.environ["CUDA_VISIBLE_DEVICES"]= str(args.gpu)
-    print 'Starting MAIN'
-    print 'BatchSize: ',opt.Training['bs']
+    opt.Paths = {'detections':cfg.detection_file,
+                 'img':cfg.crops_path,
+                 'frame_path':cfg.frames_path,
+                 'fc6':cfg.features_path+'/fc6_fc7_feat/',
+                 'save_path':cfg.vae_checkpoint_path}
+    opt.Network = {'z_dim':cfg.vae_encode_dim,'feature_size':4096}
+    opt.Training = {'n_epochs':cfg.vae_n_epochs,
+                    'lr':cfg.vae_lr,
+                    'bs':cfg.vae_bs,
+                    'verbose_idx':cfg.vae_verbose_idx,
+                    'weight_decay':cfg.vae_weight_decay,
+                    'step_size':cfg.vae_step_size,
+                    'gamma2':cfg.vae_gamma2,
+                    'kernels':cfg.vae_kernels,
+                    'alpha':cfg.vae_alpha,
+                    'beta':cfg.vae_beta,
+                    'gamma':cfg.vae_gamma,
+                    'delta':cfg.vae_delta,
+                    'size':cfg.vae_size,
+                    'savename':cfg.vae_savename}
+    print('Starting MAIN')
+    print('BatchSize: ',opt.Training['bs'])
     main(opt)
-
-
-
-###DEBUG
-#import matplotlib.pyplot as plt
-#from skimage import io
-
-#imp.reload(aux)
-#train_dataset = aux.dataset(opt)
-
-#it = iter(train_dataset)
-#file_dict = it.next()
-
-#for k, im in file_dict.items():
-    #print im.shape
-
-#epoch = 0
-#data_loader = torch.utils.data.DataLoader(train_dataset, num_workers = opt.Training['kernels'],
-                                                #batch_size = opt.Training['bs'], shuffle=True)
-#data_iter = tqdm(data_loader, position=2)
-#inp_string = 'Epoch {} || Loss: --- | Acc: ---'.format(epoch)
-#data_iter.set_description(inp_string)
-#cnt = 0
-#for batch_idx, file_dict in enumerate(data_iter):
-    #cnt += 1
-
-
-#plt.imshow(file_dict['image_orig']); plt.show()
-#idx = 10000
-#video, frame = train_dataset.info['videos'][idx], train_dataset.info['frames'][idx]
-#frames_sel = train_dataset.info['videos']==video
-#frames = train_dataset.info['frames'][frames_sel]
-#iframe = np.where(frames==frame)[0][0]
-#rand_inter          = np.random.randint(1,6,1)[0]
-#if np.random.rand()<0.5: 
-    #rand_inter *= -1
-
-#img_name            = '%s%s/%06d.jpg'%(train_dataset.data_path,video,frames[iframe+rand_inter])
-#image_inter         = io.imread(img_name)
-##plt.imshow(image_inter); plt.savefig('temp.png'); plt.close('all')
-

@@ -1,6 +1,6 @@
 Here we collect all our code for the nature methods journal.
 
-Our code has the following parts:
+Our code has the following parts ei:
 
 1. Preprocessing: 
     Input: [Videos]
@@ -36,23 +36,3 @@ Our code has the following parts:
         - inter-/extraploation
         Output: [plots]
 
-
-Unusual requirements:
-
-- GPUtil: https://github.com/anderskm/gputil
-
-
-
-TO DO:
-- finish human walking tsne magnification
-- finish the code for figure 2C3 (our framework)
-- similarity: finish the code for the LDA similarity plots (should work for human and rats?)
-- similarity: showing tsne of frames (and sequences?)
-
-- do we want the 'homepage' to be user specific? with inputs etc.?
-
-
-Provide:
-- features (only) of rat dataset?
-- provide a few videos for running through the network?
-        

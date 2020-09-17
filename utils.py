@@ -54,44 +54,7 @@ def load_table(file,index=None,asDict=True):
         
     else:
         return file
-        
-#def check_gpu(gpu_id):
-    #warnings.formatwarning = warning_on_one_line
-    #GPUs = GPUInfo.getGPUs()
-    
-    ##check if CUDA_VISIBLE_DEVICES was used before calling the function
-    #if 'CUDA_VISIBLE_DEVICES' in os.environ:
-        #visible_gpus = os.environ['CUDA_VISIBLE_DEVICES'].split(',')
-        ##only keep the chosen ones and from these gpu_id was chosen
-        #GPUs = [GPUs[int(i)] for i in visible_gpus]
-        #for i,gpu in enumerate(GPUs):
-            #gpu.id = i
-        
-    #for i in gpu_id:
-        #if len(GPUs)<(i+1): raise ValueError("Please choose another gpu id. The chosen ID (%i) is not available."%i)
-    
-    
-    #gpu_idx = [[gpu.id for gpu in GPUs if gpu.id==j][0] for j in gpu_id]#get the index of GPUs with same id as gpu_id
-    
-    #free = [GPUs[i].memoryFree for i in gpu_idx]
-    #load = [GPUs[i].load for i in gpu_idx]
-    
-    #for i in range(len(gpu_id)):
-        #if load[i]>0.8:
-            #warnings.warn_explicit("GPU %i is already heavily used by another user (%d %%)."%(gpu_id[i],100*load[i]),UserWarning,None,0)
-            
-        #if free[i]<float(5000):
-            #warnings.warn_explicit("Only %d MB is available on GPU %i. The training might need more memory."%(free[i],gpu_id[i]),UserWarning,None,0)
-    
-    #chosen_gpu = gpu_id[np.argmax(free)]
-    #if len(gpu_id)>1:
-        #print('PyCaffe does not support multiple GPU; chosen GPU: %i (least memory usage)'%chosen_gpu)
-    #else:
-        #print('Chosen GPU: %i'%chosen_gpu)
-    
-    #return chosen_gpu
-   
-   
+
 def adjust_coordinates(c,os,s,use_jpg_crops):
     if c[2]!=-1:
         c[0],c[1],c[2],c[3] = max(0,c[0]),max(0,c[1]),min(os[0],c[2]),min(os[1],c[3])#make sure that the bounding box is not outside of the original image
@@ -207,32 +170,6 @@ def load_features(feature_type,features_path,videos,progress_bar=True,progress_b
     frames = np.array(frames)
     coords = np.array(coords)
     return feat,frames,coords,vids
-
-
-#def draw_box(image,l=2,color=[255,0,0]):
-    #c = [image.shape[0]/2,image.shape[1]/2]
-    #size = image.shape[0]/2-2
-    #color   = np.array(color).reshape([1,1,3])
-    #color_r = np.repeat(np.repeat(color,size*2,axis=0),4,axis=1)
-    #color_c = np.repeat(np.repeat(color,size*2,axis=1),4,axis=0)
-    ## image = images[i].copy()
-    #try:
-        #image[c[0]-size:c[0]+size,c[1]-size-l:c[1]-size+l,:] = color_r
-    #except:
-        #pass
-    #try:
-        #image[c[0]-size:c[0]+size,c[1]+size-l:c[1]+size+l,:] = color_r
-    #except:
-        #pass
-    #try:
-        #image[c[0]-size-l:c[0]-size+l,c[1]-size:c[1]+size,:] = color_c
-    #except:
-        #pass
-    #try:
-        #image[c[0]+size-l:c[0]+size+l,c[1]-size:c[1]+size,:] = color_c
-    #except:
-        #pass
-    #return image
 
 def draw_box(image,coord,l=2,color=[255,0,0]):
     c = np.array([(coord[1]+coord[3])/2,

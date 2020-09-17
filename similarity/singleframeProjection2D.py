@@ -35,13 +35,13 @@ except ImportError:
     IS_UMAP=False
     print('!!UMAP not installed, tSNE will be used!!')
 
-import config as cfg
+import config_pytorch as cfg
 #import config_pytorch_human as cfg
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s", "--samples",type=int,default=1000,
+parser.add_argument("-s", "--samples",type=int,default=100,
                     help="max number of plot")
-parser.add_argument("-t", "--train_samples",type=int,default=2000,
+parser.add_argument("-t", "--train_samples",type=int,default=200,
                     help="number of samples for training the projection")
 parser.add_argument("-a", "--algorithm",type=str,default='umap',
                     help="algorithm for dimensionality reduction, ['tsne','umap']")
@@ -49,7 +49,7 @@ parser.add_argument("-ft", "--feature_type",type=str,default='fc6',
                     help="type of features, 'fc6','fc7' or 'fc6fc7' for postures")
 parser.add_argument("-c", "--cores",type=int,default=-1,
                     help="number of cores when loading images. -1: half of available cores, 0: single core")
-parser.add_argument("-sc", "--scale",type=float,default=1,
+parser.add_argument("-sc", "--scale",type=int,default=1,
                     help="scale distance between images in the 2D plot")
 args = parser.parse_args()
 

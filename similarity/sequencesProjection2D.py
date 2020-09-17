@@ -36,7 +36,7 @@ except ImportError:
     IS_UMAP=False
     print('!!UMAP not installed, tSNE will be used!!')
 
-import config as cfg
+import config_pytorch as cfg
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--n_samples",type=int,default=1000,

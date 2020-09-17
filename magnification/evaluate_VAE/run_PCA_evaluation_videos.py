@@ -25,7 +25,6 @@ from scipy.spatial.distance import euclidean, cdist
 from PIL import Image
 import imageio
 import matplotlib.gridspec as gridspec
-import imageio
 
 from sklearn.preprocessing import normalize
 try:
@@ -50,16 +49,11 @@ parser.add_argument("-q", "--queries",type=int,default=5,
                     help="Number of queries per plot")
 parser.add_argument("-l", "--length",type=int,default=50,
                     help="Number of frames")
-parser.add_argument("-g", "--gpu",type=int,default=0,
-                    help="GPU device to use for image generation")
+#parser.add_argument("-g", "--gpu",type=int,default=0,
+#                    help="GPU device to use for image generation")
 args = parser.parse_args()
 
-os.environ["CUDA_VISIBLE_DEVICES"]= str(args.gpu)
-
-############################################
-# 0. Prepare magnifier object
-############################################
-generator = Generator(z_dim=cfg.vae_encode_dim,path_model=cfg.vae_weights_path)
+#os.environ["CUDA_VISIBLE_DEVICES"]= str(args.gpu)
 
 ############################################
 # 1. Load sequences and features
@@ -73,48 +67,60 @@ uni_videos= np.unique(detections['videos'].values)
 
 #uni_videos = np.array([v for v in uni_videos if u'2kmh' in v])
 
-print('Load features...')
-pos_features,pos_frames,pos_coords,pos_videos = load_features('fc6', cfg.features_path,uni_videos.tolist())
+#print('Load features...')
+#pos_features,pos_frames,pos_coords,pos_videos = load_features('fc6', cfg.features_path,uni_videos.tolist())
 #seq_features,seq_frames,seq_coords,seq_videos = load_features('lstm',cfg.features_path,uni_videos.tolist())
 
 ############################################
 # 2. Evaluate disentanglement of posture and appearance
 ############################################
+def get_video(path, video, frames):
+    return np.stack([resize(load_image(path,video,f), (128, 128)) for f in frames])
+    
+
 dt = datetime.now()
 dt = '{}-{}-{}-{}-{}/'.format(dt.year, dt.month, dt.day, dt.hour, dt.minute)
-results_folder = cfg.results_path+'/magnification/evaluation_video/'+dt
+results_folder = cfg.results_path+'/magnification/evaluation_video_without_vae/'+dt
 if not os.path.exists(results_folder): os.makedirs(results_folder)
 
 for P in trange(args.pages,desc='Videos'):
     Q = args.queries
-#    queries = np.random.permutation(len(pos_frames))
-    queries = np.linspace(0, len(pos_frames)-1000, Q*2).astype(int) #np.random.permutation(len(uni_videos))
-    app_queries, pos_queries = queries[:Q], queries[Q:Q*2]
-    app_images  = [load_image(cfg.crops_path,pos_videos[q],pos_frames[q]) for q in app_queries]
-    z_app = [generator.encode(im,pos_features[q])[0] for im, q in zip(app_images,app_queries)]
+#    queries = np.linspace(0, len(uni_videos)-1, Q*2) #np.random.permutation(len(uni_videos))
+#    app_queries, pos_queries = queries[:Q], queries[Q:Q*2]
+    queries = np.linspace(0, len(det_frames)-1000, Q*2).astype(int)
+    videos = np.stack([get_video(cfg.crops_path, det_videos[q], det_frames[q:q+args.length]) 
+            for q in tqdm(queries, desc='load videos')])
+    appearance = videos.mean(1)
+    postures = [v - np.repeat(a[np.newaxis], v.shape[0], axis=0) for v, a in zip(videos, appearance)]
+    appearance, postures = appearance[:Q], np.stack(postures[Q:Q*2])
+    pos_images = videos[Q:Q*2]
+#    print(postures.shape)
+#    print(appearance.shape)
     ############################################
     # 3. Plot
     ############################################
     _=plt.figure(figsize=(11,11))
     plt.tight_layout()
-    R, C = Q+1, Q+1
+    R, C = Q+2, Q+1
     gs = gridspec.GridSpec(R,C)
     first_row = [plt.subplot(gs[0,i+1]) for i in range(C-1)]
-    first_column = [plt.subplot(gs[i+1,0]) for i in range(R-1)]
-    middle = [[plt.subplot(gs[i+1,j+1]) for j in range(C-1)]  for i in range(R-1)]
+    second_row = [plt.subplot(gs[1,i+1]) for i in range(C-1)]
+    first_column = [plt.subplot(gs[i+2,0]) for i in range(R-2)]
+    middle = [[plt.subplot(gs[i+2,j+1]) for j in range(C-1)]  for i in range(R-2)]
     first_row[Q//2].set_title('Query Appearance',color='black',fontsize=30)
-    for i, im in enumerate(app_images): _=first_row[i].imshow(im); _=first_row[i].axis('Off')
+    for i, im in enumerate(appearance): _=first_row[i].imshow(im); _=first_row[i].axis('Off')
+    for i, im in enumerate(videos[:Q, 0]): _=second_row[i].imshow(im); _=second_row[i].axis('Off')
     
     video = []
     for f in trange(args.length):
-        pos_images  = [load_image(cfg.crops_path,pos_videos[q],pos_frames[q+f]) for q in pos_queries]
-        z_pos = [generator.encode(im,pos_features[q+f])[1] for im, q in zip(pos_images,pos_queries)]
-        for i, im in enumerate(pos_images): _=first_column[i].imshow(im); _=first_column[i].axis('Off')
+        for i, im in enumerate(pos_images[:, f]): _=first_column[i].imshow(im); _=first_column[i].axis('Off')
         
         for i in range(Q):
             for j in range(Q):
-                im = generator.decode(z_app[j],z_pos[i])
-                if im.dtype == float: im = (im * 255).astype('uint8')
+                im = postures[i, f] + appearance[j]
+#                im = (im - im.min())/ (im.max() - im.min())
+                im[im < 0.0] = 0.0
+                im[im > 1.0] = 1.0
                 _=middle[i][j].imshow(im); _=middle[i][j].axis('Off')
         
         first_column[Q//2].set_title('Query Posture',color='blue',rotation='vertical',x=-0.3,y=0.8,fontsize=30)
@@ -125,17 +131,18 @@ for P in trange(args.pages,desc='Videos'):
         fig = plt.gcf()
         fig.canvas.draw()
         frame = np.array(fig.canvas.renderer._renderer)
+#        print(frame.shape, frame.dtype)
         video.append(frame)
     
     imageio.mimsave(results_folder+'video%d.gif'%(P),video,fps=5)
-#    try:
-    writer = imageio.get_writer(results_folder+'/video%d.mp4'%(P),fps=6)
-    for img in video: 
-        im = resize(img, (512, 512))
-        im = (im * 255).astype('uint8')
-        writer.append_data(im)
-    
-    writer.close()
-#    except:
-#        continue
+    try:
+        writer = imageio.get_writer(results_folder+'/video%d.mp4'%(P),fps=6)
+        for img in video: 
+            im = resize(img, (512, 512))
+            im = (im * 255).astype('uint8')
+            writer.append_data(im)
+        
+        writer.close()
+    except:
+        continue
 
