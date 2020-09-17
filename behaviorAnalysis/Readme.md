@@ -1,6 +1,4 @@
-Here we collect all our code for the nature methods journal.
-
-Our code has the following parts ei:
+#Components
 
 1. Preprocessing: 
     Input: [Videos]
