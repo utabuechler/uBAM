@@ -64,9 +64,101 @@ and unzip the content into the *resource/* folder. The folder should have the fo
 Since the software is developed in python, there is no need to compile. Therefore the installation time is the same needed to install the dependences and download the data. This should not take more than one hour, but it strongly depends on the system status and internet speed.
 
 #Demo
-##How to run
+The demo includes an interactive interface that utilizes the pre-trained model for nearest neighbor search, 2D projection and magnification.
+The demo can be accessed in three way: remote server, using this code or docker image.
+
+## Remote server
+The interface is available on our servers and can be access using the following command
+```
+ssh -Y behavior@behavior.iwr.uni-heidelberg.de
+```
+and input the password "`analysis`". Once connected to the server, you can simply run the interface selecting the human dataset 
+```
+human_interface.sh
+```
+or the rats dataset
+```
+rats_interface.sh
+```
+The remote interface can access more data that we can provide for the local version.
+
+## Locally
+Everything needed to run the interface locally on your machine is available in this folder. After installing all dependencies and downloading the sample data (as described in the previous sections above) run the following commands:
+```
+./bin/human_interface.sh
+```
+or the rats dataset
+```
+./bin/human_interface.sh
+```
+
+Note: the sample data used for the demo includes only two subjects for healthy and two impaired, which is not enough for training the model.
+
+## Docker image
+We provide a docker image which includes the sample data, the code and all dependences are installed. Make sure that docker is installed on your system.
+To use the docker image, first load the image in your local docker and start the container using
+```
+xhost +local:docker
+docker load -i ubam.tar
+docker run -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY -i --name ubam -t ubam /bin/bash
+```
+The -v and -e options make sure that the interface is forwarded from the container to the host pc. This has been tested on ubuntu and it might change on MAC system.
+When attached to the docker container, run the following to start the interface
+```
+cd /home/ubam/interface
+./bin/human_interface.sh
+```
+Note: the sample data used for the demo includes only two subjects for healthy and two impaired, which is not enough for training the model.
+
+##How to use
+1. Select the video from the topdown menu in the top left side of the interface and click _Load Video_
+2. Select the modality: postures or sequences.
+3. Select the **query** using the buttons at the bottom of the preview
+4. Choose the analysis:
+  1. Nearest neighbor: show postures/sequences similar to the query.
+  2. Low-dimensional 2D embedding (e.g. tSNE). Embed a subset of the data into a 2D embedding.
+  3. Magnification. Amplify the deviation between the query and the nearest healthy reference.
+5. Click the "show" button.
+
 ##Output
+1. Nearest neighbor: show postures/sequences similar to the query.
+2. Low-dimensional 2D embedding (e.g. tSNE). Embed a subset of the data into a 2D embedding.
+3. Magnification. Amplify the deviation between the query and the nearest healthy reference.
+
 ##Runtime
+Based on the type of experiment, the modality and internet speed (if remote), each click of the "show" button can take from 10 seconds up to 1 minute to show the result.
 
 #Run on your data
+To train a model on your data, create a configuration file in _behaviorAnalysis/_ for example by copying _config_pytorch_rats.py_ and changing the name to _config_pytorch_{yourdataset}.py_. Then change the parameters into the new config file, most importantly you have to change the following:
+- project: the dataset name
+- video-path: the root-path to your videos. The code will recursively looking for videos within each folder that matches the format in video-format and produce a csv file with all videos.
+- video-format: the format of the videos, for example "avi", "MTS" or "mp4".
+
+Our preprocessing code will extract each frame from all videos and save it as jpg, moreover it produces the necessary files and folders for the next steps.
+```
+cd behaviorAnalysis/
+cp config_pytorch_{yourdataset}.py config_pytorch.py
+python3 preprocessing/preprocessing.py
+```
+
+The script should have produced a folder in _resources/_ with the structure:
+- {project_name}/:
+  - data
+    - video1
+    - video2
+    - ...
+  - crops
+    - video1
+    - video2
+    - ...
+  - detections.csv
+
+By default, the full video frame is used. In case you what to extract a specific ROI, modify the detection.csv file accordingly and run preprocessing.py again.
+Finally, you can train the model and extract the features by running
+```
+python3 features/pytorch/train.py
+python3 features/pytorch/extract_fc_features.py
+python3 features/pytorch/extract_lstm_features.py
+```
+
 

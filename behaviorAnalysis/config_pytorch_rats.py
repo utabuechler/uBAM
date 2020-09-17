@@ -1,5 +1,5 @@
 import os
-home = os.path.expanduser(".")
+home = os.path.expanduser("..")
 
 _project=project='rats'
 _input_path = home+'/resources/'
