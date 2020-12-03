@@ -1,4 +1,4 @@
-Here we collect all our code for our nature journal.
+Here we collect all our code for our ''Unsupervised Behavior Analysis and Magnification'' project.
 
 #System requirements
 The software was tested on `Ubuntu 18.04`.
