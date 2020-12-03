@@ -1,8 +1,8 @@
-Here we collect all our code for the nature methods journal.
+Here we collect all our code for our nature journal.
 
 #System requirements
 The software was tested on `Ubuntu 18.04`.
-The code runs on Python 3. We suggest to instal the newest version of Anaconda.
+The code runs on Python 3. We suggest to install the newest version of Anaconda.
 
 ##Dependencies
 You can install all required dependencies using the following command.
@@ -11,7 +11,7 @@ pip install -r requirements.txt
 ```
 
 ### CPU-only dependencies
-The previous command automatically installs the gpu version of pytorch which is necessary for training the model. The demo does not need to run on a GPU, since uses a pretrained model. Therefore you can install the cpu version of pytorch running the following command
+The previous command automatically installs the gpu version of pytorch which is necessary for training the model. The demo does not need to run on a GPU, since it uses a pretrained model. Therefore you can install the cpu version of pytorch running the following command
 ```
 pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 ```
@@ -61,26 +61,11 @@ and unzip the content into the *resource/* folder. The folder should have the fo
 
 
 ##Installation time
-Since the software is developed in python, there is no need to compile. Therefore the installation time is the same needed to install the dependences and download the data. This should not take more than one hour, but it strongly depends on the system status and internet speed.
+Since the software is developed in python, there is no need to compile. Therefore the installation time is the same needed to install the dependencies and download the data. This should not take more than one hour, but it strongly depends on the system status and internet speed.
 
 #Demo
 The demo includes an interactive interface that utilizes the pre-trained model for nearest neighbor search, 2D projection and magnification.
 The demo can be accessed in three way: remote server, using this code or docker image.
-
-## Remote server
-The interface is available on our servers and can be access using the following command
-```
-ssh -Y behavior@behavior.iwr.uni-heidelberg.de
-```
-and input the password "`analysis`". Once connected to the server, you can simply run the interface selecting the human dataset 
-```
-human_interface.sh
-```
-or the rats dataset
-```
-rats_interface.sh
-```
-The remote interface can access more data that we can provide for the local version.
 
 ## Locally
 Everything needed to run the interface locally on your machine is available in this folder. After installing all dependencies and downloading the sample data (as described in the previous sections above) run the following commands:
@@ -95,7 +80,7 @@ or the rats dataset
 Note: the sample data used for the demo includes only two subjects for healthy and two impaired, which is not enough for training the model.
 
 ## Docker image
-We provide a docker image which includes the sample data, the code and all dependences are installed. Make sure that docker is installed on your system.
+We provide a docker image which includes the sample data, the code and all dependencies are installed. Make sure that docker is installed on your system.
 To use the docker image, first load the image in your local docker and start the container using
 ```
 xhost +local:docker
@@ -153,7 +138,7 @@ The script should have produced a folder in _resources/_ with the structure:
     - ...
   - detections.csv
 
-By default, the full video frame is used. In case you what to extract a specific ROI, modify the detection.csv file accordingly and run preprocessing.py again.
+By default, the full video frame is used. In case you want to extract a specific ROI, modify the detection.csv file accordingly and run preprocessing.py again.
 Finally, you can train the model and extract the features by running
 ```
 python3 features/pytorch/train.py
