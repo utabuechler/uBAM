@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+Design by TEMPLATED
+http://templated.co
+Released for free under the Creative Commons Attribution License
+
+Name       : Undeviating 
+Description: A two-column, fixed-width design with dark color scheme.
+Version    : 1.0
+Released   : 20140322
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title></title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700,900|Quicksand:400,700|Questrial" rel="stylesheet" />
+<link href="default.css" rel="stylesheet" type="text/css" media="all" />
+<link href="fonts.css" rel="stylesheet" type="text/css" media="all" />
+
+<!--[if IE 6]><link href="default_ie6.css" rel="stylesheet" type="text/css" /><![endif]-->
+
+</head>
+<body>
+<div id="header-wrapper">
+	<div id="header" class="container">
+		<div id="logo">
+        	<!--<span class="icon icon-cog"></span>-->
+			<img width="30%" src="images/bamlogo.png">
+			<br/>
+			<h2><a href="#">Unsupervised Behavior Analysis and Magnification <br/>using Deep Learning</a></h2>
+		</div>
+		<div id="menu">
+			<ul>
+				<li><a href="index.html" accesskey="1" title="">Homepage</a></li>
+				<li><a href="analysis.html" accesskey="2" title="">Analysis</a></li>
+				<li><a href="magnification.html" accesskey="3" title="">Magnification</a></li>
+				<li><a href="disentanglement.html" accesskey="4" title="">Disentanglement</a></li>
+				<li><a href="model.html" accesskey="5" title="">Model</a></li>
+				<li><a href="interface.html" accesskey="6" title="">Tutorial</a></li>
+				<li><a href="datapage.html" accesskey="7" title="">Data</a></li>
+				<li class="active"><a href="access_server.html" accesskey="8" title="">Server</a></li>
+				<li><a href="supplementary.html" accesskey="9" title="">Suppl.&Code</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+
+<div class="wrapper">
+    <div id="welcome" class="container">
+    
+        <div id="portfolio" class="container">
+            <h2>How to access the server</h2>
+            <p style="font-size:18px;">
+            The interface shown in <a href="interface.html" title="">Tutorial</a> can be tested on our server. The instruction for connecting to the server are shown in this page.
+            </br></br>
+            To access the server from an Ubuntu of MAC machine, run the following command in a terminal
+            <h3 style="font-size: 18px;">
+            ssh -Y behavior@behavior.iwr.uni-heidelberg.de
+            </h3>
+            and insert the following password: <b><i>analysis</i></b>.
+            </br>
+            If you are using a Window machine, you will need to use a software to connect to Ubuntu, for example <i>Putty</i>.
+            </br></br>
+            Once the connection is established, to launch the interface run
+            </br></br>
+            <h3 style="font-size: 18px;">
+            human_interface.sh
+            </h3>
+            for the <i>human dataset</i>, or
+            </br></br>
+            <h3 style="font-size: 18px;">
+            rats_interface.sh
+            </h3>
+            for the <i>rats grasping the sugar pellet</i>.
+            </p>
+            <h2>Enjoy!</h2>
+        </div>
+        
+        <div id="portfolio" class="container">
+	   <h2>Docker image</h2>
+            <p style="font-size:18px;">
+            For reproducing the interface locally, we offer a Docker image which reproduces the same environmet from the server. You can download the image (12.5GB) at the following link:
+
+            <h3 style="font-size: 18px;">
+		COMING SOON!
+            </h3>
+	    To use the docker image, first load the image in your local docker and start the container using
+</br></br>
+<h3 style="font-size: 18px;">
+xhost +local:docker </br></br>
+docker load -i ubam.tar </br></br>
+docker run -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY -i --name ubam -t ubam /bin/bash
+</h3>
+</br></br>
+The -v and -e options make sure that the interface is forwarded from the container to the host pc. 
+This commands have been tested on ubuntu and it might change on macOS systems. 
+After acceptance we will provide ports for other then current operating system versions.
+</br></br>
+When attached to the docker container, run the following to start the interface
+<h3 style="font-size: 18px;">
+cd /home/ubam/interface </br></br>
+./bin/human_interface.sh</br></br>
+</h3>
+Note: the sample data used for the demo includes only two subjects for healthy and two impaired. 
+This is just a sample for testing, but not for training, since the training data would be too large to be conveniently placed on this website.
+
+        </div>
+
+    </div>
+</div>
+<div id="copyright">
+	<p><a href="https://hci.iwr.uni-heidelberg.de/compvis">CompVis Group</a>
+    | Biagio Brattoli, Uta Buechler, Bjoern Ommer</p>
+</div>
+</body>
+</html>
